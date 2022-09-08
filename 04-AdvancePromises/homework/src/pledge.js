@@ -31,34 +31,37 @@ $Promise.prototype._internalReject = function(reson) {
       }    
     }
 
-$Promise.prototype.then = function(s1, e1) {
-  if(typeof s1 !== 'function' && typeof e1 !== 'function') {
-    s1 = e1 = false
-  }
-  this._handlerGroups.push({
-    successCb: s1,
-    errorCb: e1
-  })
-  
-  if(this._state!=='pending') this._callHandlers()
-}
-
-$Promise.prototype._callHandlers = function() {
-  while(this._handlerGroups.length) {
-    const hand = this._handlerGroups.shift()
-    if(this._state === 'fulfilled') {
-        if(hand.successCb) {
-          hand.successCb(this._value)
+    
+    $Promise.prototype._callHandlers = function() {
+      while(this._handlerGroups.length) {
+        const hand = this._handlerGroups.shift()
+        if(this._state === 'fulfilled') {
+          if(hand.successCb) {
+            hand.successCb(this._value)
+          }
         }
-    }
-    if(this._state === 'rejected'){
-        if(hand.errorCb){
-          hand.errorCb(this._value)
+        if(this._state === 'rejected'){
+          if(hand.errorCb){
+            hand.errorCb(this._value)
+          }
         }
+      }
     }
-  }
-}
+    
+    $Promise.prototype.then = function(s1, e1) {
+      if(typeof s1 !== 'function' && typeof e1 !== 'function') {
+        s1 = e1 = false
+      }
+      this._handlerGroups.push({
+        successCb: s1,
+        errorCb: e1
+      })      
+      if(this._state!=='pending') this._callHandlers()
+    }
 
+    $Promise.prototype.catch = function(func) {
+      this.then(null, func)
+    }
 
 module.exports = $Promise;
 /*-------------------------------------------------------
