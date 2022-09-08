@@ -51,12 +51,10 @@ function problemA () {
 
   // promise version
   // ???
-  Promise.all([promisifiedReadFile('poem-two/stanza-01.txt'), promisifiedReadFile('poem-two/stanza-02.txt')])
-    .then(res => {
-        blue(res[0])
-        blue(res[1])
-      })
-    .then(res => console.log('done'))
+let pOne = promisifiedReadFile('poem-two/stanza-01.txt').then(res => blue(res))
+let pTwo = promisifiedReadFile('poem-two/stanza-02.txt').then(res => blue(res))
+  
+  Promise.all([pOne, pTwo]).then(res => console.log('done'))
     
 }
 
@@ -91,9 +89,10 @@ function problemB () {
   // promise version
   // ???
 
-    Promise.all(filenames.map(res => promisifiedReadFile(res)))
-      .then(res => res.map(dat => blue(dat)))
-      .then(res => console.log('done'))
+   const prom = filenames.map(res => (promisifiedReadFile(res).then(dat => blue(dat))))
+          Promise.all(prom).then(() => console.log('done')) 
+
+           
 }
 
 function problemC () {
