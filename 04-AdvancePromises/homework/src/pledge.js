@@ -10,7 +10,7 @@ function $Promise(executor)  {
         throw TypeError('executor must be a function')
     this._state = 'pending'
     this._handlerGroups = []
-   // this._callHandlers.bind(this)
+  
     executor(this._internalResolve.bind(this), this._internalReject.bind(this))
 }
 
@@ -37,31 +37,65 @@ $Promise.prototype._internalReject = function(reson) {
         const hand = this._handlerGroups.shift()
         if(this._state === 'fulfilled') {
           if(hand.successCb) {
-            hand.successCb(this._value)
+            try{
+              const result = hand.successCb(this._value)
+              if(result instanceof $Promise){
+                return result.then(data => hand.downstreamPromise._internalResolve(data),  error => hand.downstreamPromise._internalReject(error))
+              }
+              else{
+                hand.downstreamPromise._internalResolve(result)  
+              }
+            }catch(error){
+              hand.downstreamPromise._internalReject(error)
+            }
+          }
+          else{
+            hand.downstreamPromise._internalResolve(this._value)
           }
         }
         if(this._state === 'rejected'){
           if(hand.errorCb){
-            hand.errorCb(this._value)
+            try {
+              const result = hand.errorCb(this._value) 
+              if (result instanceof $Promise) {
+                return result.then(data => hand.downstreamPromise._internalResolve(data), error => hand.downstreamPromise._internalReject(error))
+              }
+              else {
+                hand.downstreamPromise._internalResolve(result)
+              }
+            }catch(error){
+              hand.downstreamPromise._internalReject(error)              
+            }
+          }
+          else {
+            hand.downstreamPromise._internalReject(this._value)
           }
         }
       }
+      
     }
     
     $Promise.prototype.then = function(s1, e1) {
       if(typeof s1 !== 'function' && typeof e1 !== 'function') {
         s1 = e1 = false
       }
+
+      const downstreamPromise = new $Promise(() => {})
+
       this._handlerGroups.push({
         successCb: s1,
-        errorCb: e1
+        errorCb: e1,
+        downstreamPromise: downstreamPromise
       })      
       if(this._state!=='pending') this._callHandlers()
+      return downstreamPromise
     }
 
     $Promise.prototype.catch = function(func) {
-      this.then(null, func)
+      return this.then(null, func)
     }
+
+
 
 module.exports = $Promise;
 /*-------------------------------------------------------
