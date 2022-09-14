@@ -5,7 +5,7 @@ const STATUS_USER_ERROR = 422;
 
 // This array of posts persists in memory across requests. Feel free
 // to change this to a let binding if you need to reassign it.
-const posts = [];
+let posts = [];
 
 const server = express();
 // to enable parsing of json bodies for post requests
@@ -53,7 +53,54 @@ server.get('/posts/:author', (req, res) => {
         return res.json(aux)
 })
 
+server.get('/posts/:author/:title', (req, res) => {
+    const { author, title } = req.params
+    let a = posts.filter(r => r.author===author && r.title===title)
+       
+    if(!a.length)
+        return res.status(STATUS_USER_ERROR).json({error: "No existe ningun post con dicho titulo y autor indicado"})
+    
+    res.json(a)
+}) 
 
+server.put('/posts', (req, res) => {
+    const { id, title, contents } = req.body
+    if(!id || !title || !contents)
+        return res.status(STATUS_USER_ERROR).json({error: "No se recibieron los parámetros necesarios para modificar el Post"})
 
+    let aux = posts.map(r => {
+        if(r.id===id){
+            r.title=title
+            r.contents=contents
+            return res.json(r)
+        }
+    })
+ 
+    return res.status(STATUS_USER_ERROR).json({error: "El id no corresponde con un Post existente"})
+}) 
+
+server.delete('/posts', (req, res) => {
+    const { id } = req.body
+    if(!id)
+        return res.status(STATUS_USER_ERROR).json({error: "Mensaje de error"})
+
+    let aux = posts.filter(r => r.id===id)
+
+    if(!aux.length)
+        return res.status(STATUS_USER_ERROR).json({error: "Mensaje de error"})
+
+    posts.splice(aux.id, 1)
+    res.json({ success: true })
+})
+
+server.delete('/author', (req, res) => {
+    const { author } = req.body
+    const aux = posts.filter(r => r.author===author)
+    if(!aux.length)
+        return res.status(STATUS_USER_ERROR).json({"error": "No existe el autor indicado"})
+    
+    posts = posts.filter(r => r.author!==author)
+    res.json(aux)
+})
 })
 module.exports = { posts, server };
